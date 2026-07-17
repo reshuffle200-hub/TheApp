@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bench">
+<meta name="theme-color" content="#11161C">
+<title>Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --panel:   #11161C;
+    --rail:    #1B232C;
+    --ink:     #E6EDF3;
+    --dim:     #6B7B8C;
+    --trace:   #4CC9E6;
+    --signal:  #E8A33D;
+    --fault:   #E06C5A;
+    --edge:    #263039;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--panel);
+    color: var(--ink);
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overscroll-behavior: none;
+  }
+
+  /* ---- header: reads like an instrument bezel ---- */
+  header {
+    flex: none;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--edge);
+    background: var(--rail);
+  }
+  .mark {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-size: 17px;
+  }
+  .status {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .led {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--dim);
+  }
+  .led.ready { background: var(--trace); box-shadow: 0 0 6px var(--trace); }
+  .led.busy  { background: var(--signal); animation: pulse 1s ease-in-out infinite; }
+  .led.fault { background: var(--fault); }
+  @keyframes pulse { 50% { opacity: 0.25; } }
+  @media (prefers-reduced-motion: reduce) { .led.busy { animation: none; } }
+
+  /* ---- transcript ---- */
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 20px 18px 8px;
+  }
+  .turn { margin-bottom: 22px; }
+  .who {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 5px;
+  }
+  .body { white-space: pre-wrap; word-wrap: break-word; }
+  /* the signature: replies hang off a live trace line, like a probed channel */
+  .turn.bot .body {
+    border-left: 2px solid var(--trace);
+    padding-left: 12px;
+  }
+  .turn.you .body { color: var(--dim); }
+  .turn.err .body {
+    border-left: 2px solid var(--fault);
+    padding-left: 12px;
+    color: var(--fault);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+  }
+  .empty {
+    color: var(--dim);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  /* ---- input rail ---- */
+  form-rail, .rail {
+    flex: none;
+    display: flex;
+    gap: 10px;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--edge);
+    background: var(--rail);
+  }
+  textarea {
+    flex: 1;
+    resize: none;
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    border-radius: 8px;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 16px;
+    padding: 10px 12px;
+    max-height: 140px;
+    min-height: 44px;
+  }
+  textarea:focus { outline: 2px solid var(--trace); outline-offset: 1px; }
+  button {
+    flex: none;
+    border: 0;
+    border-radius: 8px;
+    background: var(--trace);
+    color: #06212B;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 0 18px;
+    min-height: 44px;
+  }
+  button:disabled { background: var(--edge); color: var(--dim); }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .ghost {
+    background: none;
+    color: var(--dim);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0 4px;
+    min-height: 0;
+    font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="mark">Bench</span>
+  <button class="ghost" id="reset">clear</button>
+  <button class="ghost" id="rekey">key</button>
+  <span class="status"><span class="led" id="led"></span><span id="stat">no key</span></span>
+</header>
+
+<div id="log">
+  <p class="empty" id="hint">
+    Personal scratchpad wired to the Claude API.<br>
+    Tap <b>key</b> to store your API key on this device, then ask anything.
+  </p>
+</div>
+
+<div class="rail">
+  <textarea id="box" rows="1" placeholder="Ask something" enterkeyhint="send"></textarea>
+  <button id="send">Send</button>
+</div>
+
+<script>
+const MODEL = "claude-sonnet-5";
+const SYSTEM = "You are a sharp, concise assistant on a phone screen. Lead with the answer. Skip preamble.";
+
+const log = document.getElementById("log");
+const box = document.getElementById("box");
+const send = document.getElementById("send");
+const led = document.getElementById("led");
+const stat = document.getElementById("stat");
+const hint = document.getElementById("hint");
+
+let history = [];
+let busy = false;
+
+/* localStorage is unavailable in some sandboxed previews - degrade to memory */
+let memKey = null;
+const store = {
+  get() { try { return localStorage.getItem("anthropic_key"); } catch { return memKey; } },
+  set(v) { try { localStorage.setItem("anthropic_key", v); } catch { memKey = v; } },
+};
+
+function setStatus(state, text) {
+  led.className = "led " + state;
+  stat.textContent = text;
+}
+
+function askKey() {
+  const v = prompt("Anthropic API key (sk-ant-...). Stored only on this device.");
+  if (v) { store.set(v.trim()); setStatus("ready", "ready"); }
+}
+
+function addTurn(role, text) {
+  if (hint) hint.remove();
+  const el = document.createElement("div");
+  el.className = "turn " + role;
+  const who = document.createElement("div");
+  who.className = "who";
+  who.textContent = role === "you" ? "you" : role === "err" ? "fault" : MODEL;
+  const body = document.createElement("div");
+  body.className = "body";
+  body.textContent = text;
+  el.append(who, body);
+  log.append(el);
+  log.scrollTop = log.scrollHeight;
+  return body;
+}
+
+async function ask() {
+  const text = box.value.trim();
+  if (!text || busy) return;
+
+  const key = store.get();
+  if (!key) { askKey(); if (!store.get()) return; }
+
+  box.value = "";
+  box.style.height = "auto";
+  addTurn("you", text);
+  history.push({ role: "user", content: text });
+
+  busy = true;
+  send.disabled = true;
+  setStatus("busy", "waiting");
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": store.get(),
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 1500,
+        system: SYSTEM,
+        messages: history,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
+
+    const reply = data.content.filter(b => b.type === "text").map(b => b.text).join("\n");
+    addTurn("bot", reply);
+    history.push({ role: "assistant", content: reply });
+    setStatus("ready", "ready");
+  } catch (e) {
+    addTurn("err", e.message);
+    history.pop();
+    setStatus("fault", "failed");
+  } finally {
+    busy = false;
+    send.disabled = false;
+  }
+}
+
+send.onclick = ask;
+document.getElementById("rekey").onclick = askKey;
+document.getElementById("reset").onclick = () => {
+  history = [];
+  log.innerHTML = "";
+  setStatus(store.get() ? "ready" : "", store.get() ? "ready" : "no key");
+};
+
+box.addEventListener("input", () => {
+  box.style.height = "auto";
+  box.style.height = Math.min(box.scrollHeight, 140) + "px";
+});
+
+setStatus(store.get() ? "ready" : "", store.get() ? "ready" : "no key");
+</script>
+</body>
+</html>
