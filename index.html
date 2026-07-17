@@ -2,296 +2,865 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Bench">
-<meta name="theme-color" content="#11161C">
-<title>Bench</title>
+<meta name="apple-mobile-web-app-title" content="Field">
+<meta name="theme-color" content="#0E141A">
+<title>Field</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --panel:   #11161C;
-    --rail:    #1B232C;
-    --ink:     #E6EDF3;
-    --dim:     #6B7B8C;
-    --trace:   #4CC9E6;
-    --signal:  #E8A33D;
-    --fault:   #E06C5A;
-    --edge:    #263039;
+    --panel:  #0E141A;
+    --rail:   #171F27;
+    --ink:    #E6EDF3;
+    --dim:    #6B7B8C;
+    --trace:  #4CC9E6;
+    --signal: #E8A33D;
+    --fault:  #E06C5A;
+    --truth:  #9AA7B4;
+    --edge:   #253039;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; margin: 0; }
+  html, body { height: 100%; margin: 0; overflow: hidden; }
   body {
     background: var(--panel);
     color: var(--ink);
     font-family: "Space Grotesk", system-ui, sans-serif;
-    font-size: 16px;
-    line-height: 1.5;
-    display: flex;
-    flex-direction: column;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-    overscroll-behavior: none;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
+  canvas { display: block; position: fixed; inset: 0; }
+  .mono { font-family: "JetBrains Mono", monospace; }
 
-  /* ---- header: reads like an instrument bezel ---- */
-  header {
-    flex: none;
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    padding: 14px 18px 12px;
-    border-bottom: 1px solid var(--edge);
-    background: var(--rail);
-  }
-  .mark {
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    font-size: 17px;
-  }
-  .status {
+  /* ---------- readout ---------- */
+  #readout {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 12px);
+    left: calc(env(safe-area-inset-left) + 12px);
+    background: rgba(14,20,26,0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--edge);
+    border-radius: 10px;
+    padding: 10px 12px;
     font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    letter-spacing: 0.12em;
+    font-size: 12px;
+    line-height: 1.6;
+    pointer-events: none;
+    min-width: 176px;
+  }
+  .hdr {
+    font-size: 9px;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--dim);
-    margin-left: auto;
+    margin-bottom: 3px;
     display: flex;
     align-items: center;
     gap: 6px;
   }
-  .led {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: var(--dim);
-  }
-  .led.ready { background: var(--trace); box-shadow: 0 0 6px var(--trace); }
-  .led.busy  { background: var(--signal); animation: pulse 1s ease-in-out infinite; }
-  .led.fault { background: var(--fault); }
-  @keyframes pulse { 50% { opacity: 0.25; } }
-  @media (prefers-reduced-motion: reduce) { .led.busy { animation: none; } }
+  .row + .hdr { margin-top: 9px; }
+  .row { display: flex; justify-content: space-between; gap: 16px; }
+  .row .k { color: var(--dim); }
+  .v-trace { color: var(--trace); }
+  .v-signal { color: var(--signal); }
+  .v-truth { color: var(--truth); }
+  .v-fault { color: var(--fault); }
+  .v-dim { color: var(--dim); }
+  .led { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); flex: none; }
+  .led.live { background: var(--trace); box-shadow: 0 0 6px var(--trace); }
+  .led.stale { background: var(--fault); }
 
-  /* ---- transcript ---- */
-  #log {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 20px 18px 8px;
+  /* ---------- rail ---------- */
+  #rail {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: rgba(23,31,39,0.92);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--edge);
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
-  .turn { margin-bottom: 22px; }
-  .who {
+  .seg { display: flex; border: 1px solid var(--edge); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    flex: 1;
+    background: none;
+    border: 0;
+    border-right: 1px solid var(--edge);
+    color: var(--dim);
     font-family: "JetBrains Mono", monospace;
     font-size: 10px;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 8px 2px;
+    min-height: 34px;
+  }
+  .seg button:last-child { border-right: 0; }
+  .seg button.on { background: var(--trace); color: #06212B; font-weight: 700; }
+  .seg.alt button.on { background: var(--signal); color: #2A1A05; }
+  .seg button:focus-visible { outline: 2px solid var(--ink); outline-offset: -3px; }
+
+  .knobs { display: flex; align-items: center; gap: 10px; }
+  .knobs label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--dim);
-    margin-bottom: 5px;
+    white-space: nowrap;
   }
-  .body { white-space: pre-wrap; word-wrap: break-word; }
-  /* the signature: replies hang off a live trace line, like a probed channel */
-  .turn.bot .body {
-    border-left: 2px solid var(--trace);
-    padding-left: 12px;
+  input[type=range] {
+    flex: 1; -webkit-appearance: none; appearance: none; height: 24px; background: none;
   }
-  .turn.you .body { color: var(--dim); }
-  .turn.err .body {
-    border-left: 2px solid var(--fault);
-    padding-left: 12px;
-    color: var(--fault);
-    font-family: "JetBrains Mono", monospace;
-    font-size: 13px;
+  input[type=range]::-webkit-slider-runnable-track { height: 2px; background: var(--edge); border-radius: 2px; }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--signal); margin-top: -9px; border: 0;
   }
-  .empty {
-    color: var(--dim);
-    font-family: "JetBrains Mono", monospace;
-    font-size: 13px;
-    line-height: 1.7;
+  input[type=range]::-moz-range-track { height: 2px; background: var(--edge); }
+  input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border: 0; border-radius: 50%; background: var(--signal); }
+  .knobs .val {
+    font-family: "JetBrains Mono", monospace; font-size: 11px;
+    color: var(--signal); width: 50px; text-align: right;
   }
-
-  /* ---- input rail ---- */
-  form-rail, .rail {
-    flex: none;
-    display: flex;
-    gap: 10px;
-    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
-    border-top: 1px solid var(--edge);
-    background: var(--rail);
-  }
-  textarea {
+  .btn {
     flex: 1;
-    resize: none;
-    background: var(--panel);
+    background: none;
     border: 1px solid var(--edge);
     border-radius: 8px;
     color: var(--ink);
-    font-family: inherit;
-    font-size: 16px;
-    padding: 10px 12px;
-    max-height: 140px;
-    min-height: 44px;
-  }
-  textarea:focus { outline: 2px solid var(--trace); outline-offset: 1px; }
-  button {
-    flex: none;
-    border: 0;
-    border-radius: 8px;
-    background: var(--trace);
-    color: #06212B;
-    font-family: inherit;
-    font-weight: 700;
-    font-size: 15px;
-    padding: 0 18px;
-    min-height: 44px;
-  }
-  button:disabled { background: var(--edge); color: var(--dim); }
-  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-  .ghost {
-    background: none;
-    color: var(--dim);
     font-family: "JetBrains Mono", monospace;
     font-size: 10px;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
-    padding: 0 4px;
-    min-height: 0;
-    font-weight: 500;
+    padding: 0 8px;
+    min-height: 34px;
+    white-space: nowrap;
+  }
+  .btn:focus-visible { outline: 2px solid var(--trace); outline-offset: 2px; }
+  .hide { display: none !important; }
+
+  /* ---------- setup sheet ---------- */
+  #sheet {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    max-height: 78vh;
+    overflow-y: auto;
+    background: rgba(14,20,26,0.97);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--edge);
+    border-radius: 14px 14px 0 0;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.3,0.9,0.3,1);
+    touch-action: auto;
+    z-index: 5;
+  }
+  #sheet.open { transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) { #sheet { transition: none; } }
+  .sheet-top { display: flex; align-items: baseline; margin-bottom: 14px; }
+  .sheet-top h2 {
+    margin: 0; font-size: 14px; font-weight: 700; letter-spacing: -0.01em;
+  }
+  .sheet-top .btn { flex: none; margin-left: auto; }
+  .grid-hdr, .arow {
+    display: grid;
+    grid-template-columns: 30px 1fr 1fr 1fr;
+    gap: 6px;
+    align-items: center;
+  }
+  .grid-hdr span {
+    font-family: "JetBrains Mono", monospace; font-size: 9px;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim);
+    text-align: center;
+  }
+  .grid-hdr span:first-child { text-align: left; }
+  .arow { margin-top: 6px; }
+  .arow .tag {
+    font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700; color: var(--signal);
+  }
+  input[type=number] {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    border-radius: 7px;
+    color: var(--ink);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 15px;
+    padding: 8px 6px;
+    text-align: center;
+    min-height: 40px;
+    -moz-appearance: textfield;
+  }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number]:focus { outline: 2px solid var(--trace); outline-offset: 1px; }
+  .note {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px; line-height: 1.7; color: var(--dim);
+    margin: 12px 0 0;
+  }
+  .note b { color: var(--signal); font-weight: 500; }
+  .sect {
+    font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--dim); font-family: "JetBrains Mono", monospace;
+    margin: 18px 0 8px; padding-top: 14px; border-top: 1px solid var(--edge);
+  }
+  .sheet-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .sheet-actions .btn.primary {
+    background: var(--trace); color: #06212B; border-color: var(--trace); font-weight: 700;
+  }
+
+  #hint {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(env(safe-area-inset-bottom) + 150px);
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    letter-spacing: 0.1em; color: var(--dim);
+    pointer-events: none; transition: opacity 0.6s; text-align: center;
   }
 </style>
 </head>
 <body>
 
-<header>
-  <span class="mark">Bench</span>
-  <button class="ghost" id="reset">clear</button>
-  <button class="ghost" id="rekey">key</button>
-  <span class="status"><span class="led" id="led"></span><span id="stat">no key</span></span>
-</header>
+<div id="readout">
+  <div class="hdr"><span class="led" id="led"></span><span id="srcLbl">Sim</span></div>
+  <div class="row"><span class="k">x</span><span class="v-trace mono" id="px">—</span></div>
+  <div class="row"><span class="k">y</span><span class="v-trace mono" id="py">—</span></div>
+  <div class="row"><span class="k">z</span><span class="v-trace mono" id="pz">—</span></div>
+  <div class="hdr">Quality</div>
+  <div class="row"><span class="k">resid</span><span class="mono v-signal" id="res">—</span></div>
+  <div class="row"><span class="k">error</span><span class="mono v-truth" id="err">—</span></div>
+  <div class="row"><span class="k">z err</span><span class="mono v-truth" id="zerr">—</span></div>
+</div>
 
-<div id="log">
-  <p class="empty" id="hint">
-    Personal scratchpad wired to the Claude API.<br>
-    Tap <b>key</b> to store your API key on this device, then ask anything.
+<div id="hint">one finger orbit · two pan · pinch zoom</div>
+
+<div id="rail">
+  <div class="seg alt" id="srcSeg">
+    <button data-src="sim" class="on">Sim</button>
+    <button data-src="manual">Manual</button>
+    <button data-src="live">Live</button>
+  </div>
+  <div class="seg" id="solverSeg">
+    <button data-mode="gn" class="on">Gauss–Newton</button>
+    <button data-mode="cf">Closed form</button>
+    <button data-mode="both">Both</button>
+  </div>
+  <div class="knobs" id="noiseRow">
+    <label for="noise">Noise σ</label>
+    <input type="range" id="noise" min="0" max="30" step="1" value="4">
+    <span class="val" id="noiseVal">4 cm</span>
+  </div>
+  <div class="knobs">
+    <button class="btn" id="play">Pause</button>
+    <button class="btn" id="view">Top view</button>
+    <button class="btn" id="reset">Reset view</button>
+    <button class="btn" id="setup">Setup</button>
+  </div>
+</div>
+
+<div id="sheet">
+  <div class="sheet-top">
+    <h2>Setup</h2>
+    <button class="btn" id="closeSheet">Close</button>
+  </div>
+
+  <div class="grid-hdr"><span>Anchor</span><span>x (m)</span><span>y (m)</span><span>z (m)</span></div>
+  <div id="anchorRows"></div>
+  <p class="note">
+    Anchors need to <b>not be coplanar</b>. With only A3 raised, z leans entirely on it —
+    raise a second one diagonally to tighten z.
   </p>
+
+  <div class="sect">Manual ranges (m)</div>
+  <div class="grid-hdr"><span></span><span>r0</span><span>r1</span><span>r2</span></div>
+  <div class="arow">
+    <span class="tag">r</span>
+    <input type="number" id="mr0" step="0.01" value="1.55">
+    <input type="number" id="mr1" step="0.01" value="1.55">
+    <input type="number" id="mr2" step="0.01" value="1.55">
+  </div>
+  <div class="grid-hdr" style="margin-top:6px"><span></span><span>r3</span><span></span><span></span></div>
+  <div class="arow">
+    <span class="tag"></span>
+    <input type="number" id="mr3" step="0.01" value="1.60">
+    <span></span><span></span>
+  </div>
+  <p class="note">Type ranges to solve for a static point. Switches source to <b>Manual</b> automatically.</p>
+
+  <div class="sect">Live source</div>
+  <div class="grid-hdr"><span></span><span style="grid-column: span 3; text-align:left">SSE endpoint</span></div>
+  <div class="arow" style="grid-template-columns: 30px 1fr">
+    <span class="tag">/</span>
+    <input type="text" id="epath" value="/ranges"
+      style="background:var(--panel);border:1px solid var(--edge);border-radius:7px;color:var(--ink);
+             font-family:'JetBrains Mono',monospace;font-size:14px;padding:8px;min-height:40px;text-align:left;width:100%">
+  </div>
+  <p class="note" id="liveNote"></p>
+
+  <div class="sheet-actions">
+    <button class="btn primary" id="apply">Apply</button>
+  </div>
 </div>
 
-<div class="rail">
-  <textarea id="box" rows="1" placeholder="Ask something" enterkeyhint="send"></textarea>
-  <button id="send">Send</button>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-const MODEL = "claude-sonnet-5";
-const SYSTEM = "You are a sharp, concise assistant on a phone screen. Lead with the answer. Skip preamble.";
-
-const log = document.getElementById("log");
-const box = document.getElementById("box");
-const send = document.getElementById("send");
-const led = document.getElementById("led");
-const stat = document.getElementById("stat");
-const hint = document.getElementById("hint");
-
-let history = [];
-let busy = false;
-
-/* localStorage is unavailable in some sandboxed previews - degrade to memory */
-let memKey = null;
-const store = {
-  get() { try { return localStorage.getItem("anthropic_key"); } catch { return memKey; } },
-  set(v) { try { localStorage.setItem("anthropic_key", v); } catch { memKey = v; } },
+/* ============================================================
+   CONFIG — startup defaults. Editable live in the Setup sheet.
+   Metres, z-up, floor at z = 0.
+   ============================================================ */
+const CFG = {
+  anchors: [
+    { id: "A0", p: [0, 0, 0]   },
+    { id: "A1", p: [2, 0, 0]   },
+    { id: "A2", p: [0, 2, 0]   },
+    { id: "A3", p: [2, 2, 1.5] },   // only raised anchor — carries your z information
+  ],
+  field: 4,
+  gnIters: 6,
+  lambda: 1e-6,
+  staleMs: 800,     // no packet for this long => live goes stale
 };
 
-function setStatus(state, text) {
-  led.className = "led " + state;
-  stat.textContent = text;
+const COL = {
+  trace: 0x4CC9E6, signal: 0xE8A33D, fault: 0xE06C5A,
+  truth: 0x9AA7B4, dim: 0x6B7B8C, edge: 0x253039,
+};
+
+/* ============================================================
+   MATH
+   ============================================================ */
+function solve3(A, b) {
+  const M = [[A[0][0], A[0][1], A[0][2], b[0]],
+             [A[1][0], A[1][1], A[1][2], b[1]],
+             [A[2][0], A[2][1], A[2][2], b[2]]];
+  for (let c = 0; c < 3; c++) {
+    let piv = c;
+    for (let r = c + 1; r < 3; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+    if (Math.abs(M[piv][c]) < 1e-12) return null;      // singular: degenerate geometry
+    const tmp = M[c]; M[c] = M[piv]; M[piv] = tmp;
+    for (let r = 0; r < 3; r++) {
+      if (r === c) continue;
+      const f = M[r][c] / M[c][c];
+      for (let k = c; k < 4; k++) M[r][k] -= f * M[c][k];
+    }
+  }
+  return [M[0][3]/M[0][0], M[1][3]/M[1][1], M[2][3]/M[2][2]];
 }
 
-function askKey() {
-  const v = prompt("Anthropic API key (sk-ant-...). Stored only on this device.");
-  if (v) { store.set(v.trim()); setStatus("ready", "ready"); }
+const sub  = (a, b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+const dot  = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+const norm = a => Math.sqrt(dot(a, a));
+
+/* Closed form: subtract anchor 0's sphere equation from the others.
+   ‖p−aᵢ‖² = rᵢ²  →  p·p − 2aᵢ·p + aᵢ·aᵢ = rᵢ²
+   (eq0)−(eqi)    →  2(aᵢ−a₀)·p = (r₀²−rᵢ²) − (a₀·a₀ − aᵢ·aᵢ) */
+function closedForm(anchors, r) {
+  const a0 = anchors[0].p, r0 = r[0];
+  const A = [], b = [];
+  for (let i = 1; i < 4; i++) {
+    const ai = anchors[i].p;
+    A.push([2*(ai[0]-a0[0]), 2*(ai[1]-a0[1]), 2*(ai[2]-a0[2])]);
+    b.push((r0*r0 - r[i]*r[i]) - (dot(a0,a0) - dot(ai,ai)));
+  }
+  return solve3(A, b);
 }
 
-function addTurn(role, text) {
-  if (hint) hint.remove();
-  const el = document.createElement("div");
-  el.className = "turn " + role;
-  const who = document.createElement("div");
-  who.className = "who";
-  who.textContent = role === "you" ? "you" : role === "err" ? "fault" : MODEL;
-  const body = document.createElement("div");
-  body.className = "body";
-  body.textContent = text;
-  el.append(who, body);
-  log.append(el);
-  log.scrollTop = log.scrollHeight;
-  return body;
+/* Gauss-Newton: minimise Σ(‖p−aᵢ‖ − rᵢ)².
+   Jacobian row i = unit vector from anchor i toward p. */
+function gaussNewton(anchors, r, seed) {
+  let p = (seed && isFinite(seed[0]+seed[1]+seed[2])) ? seed.slice() : [1, 1, 0.75];
+  for (let it = 0; it < CFG.gnIters; it++) {
+    const JtJ = [[CFG.lambda,0,0],[0,CFG.lambda,0],[0,0,CFG.lambda]];
+    const Jtf = [0,0,0];
+    for (let i = 0; i < 4; i++) {
+      const d = sub(p, anchors[i].p);
+      const dist = Math.max(norm(d), 1e-9);
+      const J = [d[0]/dist, d[1]/dist, d[2]/dist];
+      const f = dist - r[i];
+      for (let a = 0; a < 3; a++) {
+        Jtf[a] += J[a]*f;
+        for (let b2 = 0; b2 < 3; b2++) JtJ[a][b2] += J[a]*J[b2];
+      }
+    }
+    const step = solve3(JtJ, [-Jtf[0], -Jtf[1], -Jtf[2]]);
+    if (!step) break;
+    p = [p[0]+step[0], p[1]+step[1], p[2]+step[2]];
+    if (norm(step) < 1e-9) break;
+  }
+  let ss = 0;
+  for (let i = 0; i < 4; i++) ss += Math.pow(norm(sub(p, anchors[i].p)) - r[i], 2);
+  return { p, residual: Math.sqrt(ss/4) };
 }
 
-async function ask() {
-  const text = box.value.trim();
-  if (!text || busy) return;
+/* ============================================================
+   SOURCES
+   ============================================================ */
+let gaussSpare = null;
+function gauss() {
+  if (gaussSpare !== null) { const s = gaussSpare; gaussSpare = null; return s; }
+  let u, v, s;
+  do { u = Math.random()*2-1; v = Math.random()*2-1; s = u*u+v*v; } while (s >= 1 || s === 0);
+  const m = Math.sqrt(-2*Math.log(s)/s);
+  gaussSpare = v*m;
+  return u*m;
+}
 
-  const key = store.get();
-  if (!key) { askKey(); if (!store.get()) return; }
+const truePos = t => [
+  1.0 + 0.85*Math.sin(t*0.55),
+  1.0 + 0.85*Math.sin(t*0.37 + 1.2),
+  0.95 + 0.55*Math.sin(t*0.23 + 0.6),
+];
 
-  box.value = "";
-  box.style.height = "auto";
-  addTurn("you", text);
-  history.push({ role: "user", content: text });
+const measure = (pt, sigma) =>
+  CFG.anchors.map(a => Math.max(norm(sub(pt, a.p)) + gauss()*sigma, 0.01));
 
-  busy = true;
-  send.disabled = true;
-  setStatus("busy", "waiting");
+/* Live: Server-Sent Events. Only possible when this page is served BY the
+   ESP32 (same origin, plain http). From an https host the browser blocks it
+   as mixed content — there is no client-side fix. */
+const LIVE = { es: null, ranges: null, seq: -1, last: 0, rate: 0, err: null };
+let rateT = 0, rateN = 0;
 
+function liveConnect(path) {
+  liveDisconnect();
+  if (location.protocol === "https:") {
+    LIVE.err = "blocked: page is https, ESP32 is http";
+    return;
+  }
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": store.get(),
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1500,
-        system: SYSTEM,
-        messages: history,
-      }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error?.message || `HTTP ${res.status}`);
-
-    const reply = data.content.filter(b => b.type === "text").map(b => b.text).join("\n");
-    addTurn("bot", reply);
-    history.push({ role: "assistant", content: reply });
-    setStatus("ready", "ready");
+    LIVE.err = null;
+    LIVE.es = new EventSource(path);
+    const onMsg = e => {
+      try {
+        const d = JSON.parse(e.data);
+        const r = d.r || d.ranges;
+        if (!Array.isArray(r) || r.length < 4) return;
+        LIVE.ranges = r.slice(0, 4);
+        LIVE.seq = d.seq != null ? d.seq : LIVE.seq + 1;
+        LIVE.last = performance.now();
+        LIVE.err = null;
+        rateN++;
+      } catch (_) { LIVE.err = "bad json"; }
+    };
+    LIVE.es.addEventListener("ranges", onMsg);
+    LIVE.es.onmessage = onMsg;          // also accept unnamed events
+    LIVE.es.onerror = () => { LIVE.err = "no connection"; };
   } catch (e) {
-    addTurn("err", e.message);
-    history.pop();
-    setStatus("fault", "failed");
-  } finally {
-    busy = false;
-    send.disabled = false;
+    LIVE.err = e.message;
   }
 }
+function liveDisconnect() {
+  if (LIVE.es) { LIVE.es.close(); LIVE.es = null; }
+  LIVE.ranges = null; LIVE.rate = 0;
+}
 
-send.onclick = ask;
-document.getElementById("rekey").onclick = askKey;
-document.getElementById("reset").onclick = () => {
-  history = [];
-  log.innerHTML = "";
-  setStatus(store.get() ? "ready" : "", store.get() ? "ready" : "no key");
-};
+/* ============================================================
+   SCENE
+   ============================================================ */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0E141A);
+scene.fog = new THREE.Fog(0x0E141A, 9, 22);
 
-box.addEventListener("input", () => {
-  box.style.height = "auto";
-  box.style.height = Math.min(box.scrollHeight, 140) + "px";
+const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 200);
+camera.up.set(0, 0, 1);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+const key = new THREE.DirectionalLight(0xffffff, 0.55);
+key.position.set(3, -4, 6);
+scene.add(key);
+
+const grid = new THREE.GridHelper(CFG.field, CFG.field*4, COL.edge, COL.edge);
+grid.rotation.x = Math.PI/2;
+grid.position.set(1, 1, 0);
+grid.material.opacity = 0.6;
+grid.material.transparent = true;
+scene.add(grid);
+scene.add(new THREE.AxesHelper(0.45));
+
+function makeLabel(text, color) {
+  const c = document.createElement("canvas");
+  c.width = 128; c.height = 64;
+  const g = c.getContext("2d");
+  g.fillStyle = color;
+  g.font = "bold 40px JetBrains Mono, monospace";
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(text, 64, 32);
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: new THREE.CanvasTexture(c), transparent: true, depthTest: false
+  }));
+  spr.scale.set(0.32, 0.16, 1);
+  return spr;
+}
+
+/* anchors live in a group so Apply can rebuild them */
+const anchorGroup = new THREE.Group();
+scene.add(anchorGroup);
+
+function buildAnchors() {
+  while (anchorGroup.children.length) {
+    const c = anchorGroup.children.pop();
+    if (c.geometry) c.geometry.dispose();
+    if (c.material) { if (c.material.map) c.material.map.dispose(); c.material.dispose(); }
+    anchorGroup.remove(c);
+  }
+  CFG.anchors.forEach(a => {
+    const raised = a.p[2] > 0.01;
+    const col = raised ? COL.signal : COL.dim;
+    const m = new THREE.Mesh(
+      new THREE.BoxGeometry(0.09, 0.09, 0.09),
+      new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.35 })
+    );
+    m.position.set(a.p[0], a.p[1], a.p[2]);
+    anchorGroup.add(m);
+
+    const lbl = makeLabel(a.id, raised ? "#E8A33D" : "#8B9AAB");
+    lbl.position.set(a.p[0], a.p[1], a.p[2] + 0.18);
+    anchorGroup.add(lbl);
+
+    if (raised) {
+      const g = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(a.p[0], a.p[1], 0),
+        new THREE.Vector3(a.p[0], a.p[1], a.p[2]),
+      ]);
+      anchorGroup.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color: COL.edge })));
+    }
+  });
+}
+buildAnchors();
+
+const gnDot = new THREE.Mesh(
+  new THREE.SphereGeometry(0.058, 20, 16),
+  new THREE.MeshStandardMaterial({ color: COL.trace, emissive: COL.trace, emissiveIntensity: 0.5 })
+);
+scene.add(gnDot);
+
+const cfDot = new THREE.Mesh(
+  new THREE.SphereGeometry(0.064, 14, 10),
+  new THREE.MeshBasicMaterial({ color: COL.signal, wireframe: true })
+);
+scene.add(cfDot);
+
+const truthDot = new THREE.Mesh(
+  new THREE.OctahedronGeometry(0.05),
+  new THREE.MeshBasicMaterial({ color: COL.truth, wireframe: true })
+);
+scene.add(truthDot);
+
+const disagree = new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+  new THREE.LineBasicMaterial({ color: COL.fault, transparent: true, opacity: 0.9 })
+);
+scene.add(disagree);
+
+const drop = new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
+  new THREE.LineDashedMaterial({ color: COL.trace, dashSize: 0.06, gapSize: 0.05, transparent: true, opacity: 0.5 })
+);
+scene.add(drop);
+
+const ring = new THREE.Mesh(
+  new THREE.RingGeometry(0.07, 0.09, 28),
+  new THREE.MeshBasicMaterial({ color: COL.trace, transparent: true, opacity: 0.45, side: THREE.DoubleSide })
+);
+scene.add(ring);
+
+/* ============================================================
+   CAMERA CONTROLS
+   ============================================================ */
+const HOME = { theta: -0.9, phi: 1.05, radius: 5.4, target: new THREE.Vector3(1, 1, 0.6) };
+const cam = { theta: HOME.theta, phi: HOME.phi, radius: HOME.radius, target: HOME.target.clone() };
+
+function applyCam() {
+  cam.phi = Math.min(Math.max(cam.phi, 0.05), Math.PI - 0.05);
+  cam.radius = Math.min(Math.max(cam.radius, 0.8), 24);
+  camera.position.set(
+    cam.target.x + cam.radius*Math.sin(cam.phi)*Math.cos(cam.theta),
+    cam.target.y + cam.radius*Math.sin(cam.phi)*Math.sin(cam.theta),
+    cam.target.z + cam.radius*Math.cos(cam.phi)
+  );
+  camera.lookAt(cam.target);
+}
+
+const ptrs = new Map();
+let last1 = null, lastDist = 0, lastMid = null;
+const cv = renderer.domElement;
+
+cv.addEventListener("pointerdown", e => {
+  cv.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  last1 = { x: e.clientX, y: e.clientY };
+  fadeHint();
 });
 
-setStatus(store.get() ? "ready" : "", store.get() ? "ready" : "no key");
+cv.addEventListener("pointermove", e => {
+  if (!ptrs.has(e.pointerId)) return;
+  ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  const pts = [...ptrs.values()];
+  if (pts.length === 1) {
+    cam.theta -= (e.clientX - last1.x) * 0.006;
+    cam.phi   -= (e.clientY - last1.y) * 0.006;
+    last1 = { x: e.clientX, y: e.clientY };
+    applyCam();
+  } else {
+    const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+    const mid  = { x: (pts[0].x + pts[1].x)/2, y: (pts[0].y + pts[1].y)/2 };
+    if (lastDist && dist > 0) cam.radius *= lastDist / dist;
+    if (lastMid) {
+      const dx = mid.x - lastMid.x, dy = mid.y - lastMid.y;
+      const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
+      const up    = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+      const k = cam.radius * 0.0022;
+      cam.target.addScaledVector(right, -dx*k);
+      cam.target.addScaledVector(up, dy*k);
+    }
+    lastDist = dist; lastMid = mid;
+    applyCam();
+  }
+});
+
+function endPtr(e) {
+  ptrs.delete(e.pointerId);
+  if (ptrs.size < 2) { lastDist = 0; lastMid = null; }
+  if (ptrs.size === 1) last1 = [...ptrs.values()][0];
+}
+cv.addEventListener("pointerup", endPtr);
+cv.addEventListener("pointercancel", endPtr);
+cv.addEventListener("wheel", e => {
+  e.preventDefault();
+  cam.radius *= 1 + Math.sign(e.deltaY)*0.08;
+  applyCam(); fadeHint();
+}, { passive: false });
+
+function resize() {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+}
+addEventListener("resize", resize);
+resize();
+applyCam();
+
+/* ============================================================
+   UI
+   ============================================================ */
+let mode = "gn";
+let src = "sim";
+let running = true;
+let sigma = 0.04;
+
+const $ = id => document.getElementById(id);
+
+const hintEl = $("hint");
+let hintGone = false;
+function fadeHint() {
+  if (hintGone) return;
+  hintGone = true;
+  hintEl.style.opacity = "0";
+  setTimeout(() => hintEl.remove(), 700);
+}
+setTimeout(fadeHint, 6000);
+
+/* build anchor input rows */
+const rowsEl = $("anchorRows");
+CFG.anchors.forEach((a, i) => {
+  const row = document.createElement("div");
+  row.className = "arow";
+  row.innerHTML = `<span class="tag">${a.id}</span>` +
+    [0,1,2].map(k =>
+      `<input type="number" step="0.05" id="a${i}_${k}" value="${a.p[k]}">`
+    ).join("");
+  rowsEl.appendChild(row);
+});
+
+function setSrc(s) {
+  src = s;
+  [...$("srcSeg").children].forEach(c => c.classList.toggle("on", c.dataset.src === s));
+  $("noiseRow").classList.toggle("hide", s !== "sim");
+  $("srcLbl").textContent = s === "sim" ? "Sim" : s === "manual" ? "Manual" : "Live";
+  if (s === "live") liveConnect($("epath").value.trim() || "/ranges");
+  else liveDisconnect();
+}
+
+$("srcSeg").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (b) setSrc(b.dataset.src);
+});
+
+$("solverSeg").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  mode = b.dataset.mode;
+  [...e.currentTarget.children].forEach(c => c.classList.toggle("on", c === b));
+});
+
+$("noise").addEventListener("input", e => {
+  sigma = e.target.value / 100;
+  $("noiseVal").textContent = e.target.value + " cm";
+});
+
+$("play").onclick = () => {
+  running = !running;
+  $("play").textContent = running ? "Pause" : "Play";
+};
+
+$("reset").onclick = () => {
+  cam.theta = HOME.theta; cam.phi = HOME.phi; cam.radius = HOME.radius;
+  cam.target.copy(HOME.target);
+  applyCam();
+};
+
+$("view").onclick = () => {
+  cam.theta = -Math.PI/2; cam.phi = 0.08; cam.radius = 4.4;
+  cam.target.set(1, 1, 0);
+  applyCam();
+};
+
+const sheet = $("sheet");
+$("setup").onclick = () => {
+  sheet.classList.add("open");
+  $("liveNote").innerHTML = location.protocol === "https:"
+    ? "This page is on <b>https</b>, so the browser will block a plain-http ESP32. Live only works when the ESP32 serves this file."
+    : "Same origin, http — live is available. Point this at your SSE route.";
+};
+$("closeSheet").onclick = () => sheet.classList.remove("open");
+
+/* typing a manual range switches source for you */
+["mr0","mr1","mr2","mr3"].forEach(id =>
+  $(id).addEventListener("input", () => { if (src !== "manual") setSrc("manual"); })
+);
+
+$("apply").onclick = () => {
+  CFG.anchors.forEach((a, i) => {
+    for (let k = 0; k < 3; k++) {
+      const v = parseFloat($(`a${i}_${k}`).value);
+      if (isFinite(v)) a.p[k] = v;
+    }
+  });
+  buildAnchors();
+  if (src === "live") liveConnect($("epath").value.trim() || "/ranges");
+  sheet.classList.remove("open");
+};
+
+const el = {
+  px: $("px"), py: $("py"), pz: $("pz"),
+  res: $("res"), err: $("err"), zerr: $("zerr"),
+  led: $("led"), srcLbl: $("srcLbl"),
+};
+const fmt = v => (v >= 0 ? " " : "") + v.toFixed(3);
+const manualRanges = () => ["mr0","mr1","mr2","mr3"].map(id => {
+  const v = parseFloat($(id).value);
+  return isFinite(v) && v > 0 ? v : 0.01;
+});
+
+/* ============================================================
+   LOOP
+   ============================================================ */
+let t = 0, lastT = performance.now();
+let held = null;
+
+function frame(now) {
+  const dt = Math.min((now - lastT)/1000, 0.1);
+  lastT = now;
+  if (running && src === "sim") t += dt;
+
+  /* rate meter */
+  rateT += dt;
+  if (rateT >= 0.5) { LIVE.rate = rateN / rateT; rateN = 0; rateT = 0; }
+
+  /* ---- pick a range vector from the active source ---- */
+  let truth = null, r = null, ok = true;
+
+  if (src === "sim") {
+    truth = truePos(t);
+    r = measure(truth, sigma);
+    el.led.className = "led live";
+  } else if (src === "manual") {
+    r = manualRanges();
+    el.led.className = "led live";
+  } else {
+    const fresh = LIVE.ranges && (now - LIVE.last) < CFG.staleMs;
+    if (fresh) { r = LIVE.ranges; el.led.className = "led live"; }
+    else { ok = false; el.led.className = "led stale"; }
+  }
+
+  if (ok) {
+    const cf = closedForm(CFG.anchors, r);
+    const gn = gaussNewton(CFG.anchors, r, cf);
+    const shown = (mode === "cf" && cf) ? cf : gn.p;
+    held = { cf, gn, shown, truth };
+  }
+
+  if (held) {
+    const { cf, gn, shown, truth: tr } = held;
+
+    gnDot.visible = mode !== "cf";
+    cfDot.visible = (mode === "cf" || mode === "both") && !!cf;
+    disagree.visible = mode === "both" && !!cf;
+    truthDot.visible = !!tr;
+
+    gnDot.position.set(gn.p[0], gn.p[1], gn.p[2]);
+    if (cf) cfDot.position.set(cf[0], cf[1], cf[2]);
+    if (tr) truthDot.position.set(tr[0], tr[1], tr[2]);
+
+    if (disagree.visible) {
+      disagree.geometry.setFromPoints([
+        new THREE.Vector3(gn.p[0], gn.p[1], gn.p[2]),
+        new THREE.Vector3(cf[0], cf[1], cf[2]),
+      ]);
+    }
+
+    drop.geometry.setFromPoints([
+      new THREE.Vector3(shown[0], shown[1], shown[2]),
+      new THREE.Vector3(shown[0], shown[1], 0),
+    ]);
+    drop.computeLineDistances();
+    ring.position.set(shown[0], shown[1], 0.001);
+
+    el.px.textContent = fmt(shown[0]);
+    el.py.textContent = fmt(shown[1]);
+    el.pz.textContent = fmt(shown[2]);
+
+    el.res.textContent = (gn.residual*100).toFixed(1) + " cm";
+    el.res.className = "mono " + (gn.residual > 0.06 ? "v-fault" : "v-signal");
+
+    if (tr) {   /* ground truth only exists in sim */
+      const e3 = norm(sub(shown, tr));
+      const ez = Math.abs(shown[2] - tr[2]);
+      el.err.textContent  = (e3*100).toFixed(1) + " cm";
+      el.zerr.textContent = (ez*100).toFixed(1) + " cm";
+      el.err.className  = "mono " + (e3 > 0.15 ? "v-fault" : "v-truth");
+      el.zerr.className = "mono " + (ez > 0.15 ? "v-fault" : "v-truth");
+    } else {
+      el.err.textContent = el.zerr.textContent = "—";
+      el.err.className = el.zerr.className = "mono v-dim";
+    }
+  }
+
+  /* source label carries live status */
+  if (src === "live") {
+    el.srcLbl.textContent = LIVE.err ? LIVE.err
+      : (LIVE.ranges && (now - LIVE.last) < CFG.staleMs)
+        ? `Live ${LIVE.rate.toFixed(0)}Hz #${LIVE.seq}`
+        : "Live — waiting";
+  }
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
 </script>
 </body>
 </html>
