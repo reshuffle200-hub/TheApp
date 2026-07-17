@@ -34,7 +34,9 @@
     -webkit-user-select: none;
     user-select: none;
   }
-  canvas { display: block; position: fixed; inset: 0; }
+  /* the renderer appends the canvas as the last body child, so it needs an
+     explicit z-index or it paints over every fixed-position panel */
+  canvas { display: block; position: fixed; inset: 0; z-index: 0; }
   .mono { font-family: "JetBrains Mono", monospace; }
 
   .card {
@@ -42,32 +44,33 @@
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--edge);
-    border-radius: 10px;
+    border-radius: 8px;
   }
 
   /* ---------- quality readout, top-left ---------- */
   #readout {
     position: fixed;
-    top: calc(env(safe-area-inset-top) + 12px);
-    left: calc(env(safe-area-inset-left) + 12px);
-    padding: 10px 12px;
+    z-index: 2;
+    top: calc(env(safe-area-inset-top) + 10px);
+    left: calc(env(safe-area-inset-left) + 10px);
+    padding: 7px 9px;
     font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    line-height: 1.6;
+    font-size: 10px;
+    line-height: 1.5;
     pointer-events: none;
-    min-width: 160px;
+    min-width: 124px;
   }
   .hdr {
-    font-size: 9px;
-    letter-spacing: 0.16em;
+    font-size: 8px;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--dim);
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
   }
-  .row { display: flex; justify-content: space-between; gap: 14px; }
+  .row { display: flex; justify-content: space-between; gap: 10px; }
   .row .k { color: var(--dim); }
   .v-trace  { color: var(--trace); }
   .v-signal { color: var(--signal); }
@@ -81,46 +84,49 @@
   /* ---------- drone panel, bottom-left ---------- */
   #drone {
     position: fixed;
-    left: calc(env(safe-area-inset-left) + 12px);
+    z-index: 3;
+    left: calc(env(safe-area-inset-left) + 10px);
     bottom: 0;                       /* set by JS to clear the rail */
-    padding: 10px 12px;
-    width: 214px;
+    padding: 7px 9px;
+    width: 186px;
   }
-  #drone .hdr .name { color: var(--trace); letter-spacing: 0.14em; }
+  #drone .hdr .name { color: var(--trace); letter-spacing: 0.12em; }
   #drone .solved {
     font-family: "JetBrains Mono", monospace;
-    font-size: 13px;
-    line-height: 1.55;
-    margin-bottom: 9px;
+    font-size: 11px;
+    line-height: 1.45;
+    margin-bottom: 6px;
   }
-  #drone .solved .u { color: var(--dim); font-size: 10px; margin-left: 3px; }
+  #drone .solved .u { color: var(--dim); font-size: 8px; margin-left: 2px; }
+  #drone .solved .pm { color: var(--signal); font-size: 9px; margin-left: 5px; }
+  #drone #zoom { width: 100%; display: block; }
   .setlbl {
     font-family: "JetBrains Mono", monospace;
-    font-size: 9px;
-    letter-spacing: 0.14em;
+    font-size: 8px;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--dim);
-    margin-bottom: 5px;
-    padding-top: 8px;
+    margin-bottom: 4px;
+    padding-top: 6px;
     border-top: 1px solid var(--edge);
   }
-  .xyz { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
-  .xyz .cell { display: flex; flex-direction: column; gap: 3px; }
+  .xyz { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  .xyz .cell { display: flex; flex-direction: column; gap: 2px; }
   .xyz .cell span {
     font-family: "JetBrains Mono", monospace;
-    font-size: 9px; color: var(--dim); text-align: center;
+    font-size: 8px; color: var(--dim); text-align: center;
   }
   input[type=number], input[type=text] {
     width: 100%;
     background: var(--panel);
     border: 1px solid var(--edge);
-    border-radius: 6px;
+    border-radius: 5px;
     color: var(--ink);
     font-family: "JetBrains Mono", monospace;
-    font-size: 15px;
-    padding: 7px 2px;
+    font-size: 13px;
+    padding: 5px 2px;
     text-align: center;
-    min-height: 38px;
+    min-height: 31px;
     -moz-appearance: textfield;
   }
   input[type=number]::-webkit-outer-spin-button,
@@ -130,17 +136,18 @@
   /* ---------- rail ---------- */
   #rail {
     position: fixed;
+    z-index: 4;
     left: 0; right: 0; bottom: 0;
     background: rgba(23,31,39,0.92);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-top: 1px solid var(--edge);
-    padding: 9px 12px calc(9px + env(safe-area-inset-bottom));
+    padding: 6px 9px calc(6px + env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 5px;
   }
-  .seg { display: flex; border: 1px solid var(--edge); border-radius: 8px; overflow: hidden; }
+  .seg { display: flex; border: 1px solid var(--edge); border-radius: 7px; overflow: hidden; }
   .seg button {
     flex: 1;
     background: none;
@@ -148,44 +155,44 @@
     border-right: 1px solid var(--edge);
     color: var(--dim);
     font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    letter-spacing: 0.08em;
+    font-size: 9px;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    padding: 7px 2px;
-    min-height: 32px;
+    padding: 5px 2px;
+    min-height: 28px;
   }
   .seg button:last-child { border-right: 0; }
   .seg button.on { background: var(--trace); color: #06212B; font-weight: 700; }
   .seg.alt button.on { background: var(--signal); color: #2A1A05; }
   .seg button:focus-visible { outline: 2px solid var(--ink); outline-offset: -3px; }
 
-  .knobs { display: flex; align-items: center; gap: 10px; }
+  .knobs { display: flex; align-items: center; gap: 8px; }
   .knobs label {
     font-family: "JetBrains Mono", monospace;
-    font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+    font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase;
     color: var(--dim); white-space: nowrap;
   }
-  input[type=range] { flex: 1; -webkit-appearance: none; appearance: none; height: 24px; background: none; }
+  input[type=range] { flex: 1; -webkit-appearance: none; appearance: none; height: 20px; background: none; }
   input[type=range]::-webkit-slider-runnable-track { height: 2px; background: var(--edge); border-radius: 2px; }
   input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
-    background: var(--signal); margin-top: -9px; border: 0;
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--signal); margin-top: -7px; border: 0;
   }
   input[type=range]::-moz-range-track { height: 2px; background: var(--edge); }
-  input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border: 0; border-radius: 50%; background: var(--signal); }
+  input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: var(--signal); }
   .knobs .val {
-    font-family: "JetBrains Mono", monospace; font-size: 11px;
-    color: var(--signal); width: 48px; text-align: right;
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    color: var(--signal); width: 42px; text-align: right;
   }
   .btn {
     flex: 1;
     background: none;
     border: 1px solid var(--edge);
-    border-radius: 8px;
+    border-radius: 7px;
     color: var(--ink);
     font-family: "JetBrains Mono", monospace;
-    font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 0 6px; min-height: 32px; white-space: nowrap;
+    font-size: 9px; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 0 5px; min-height: 28px; white-space: nowrap;
   }
   .btn:focus-visible { outline: 2px solid var(--trace); outline-offset: 2px; }
   .hide { display: none !important; }
@@ -246,9 +253,9 @@
 <div id="drone" class="card">
   <div class="hdr"><span class="name">Drone 1</span></div>
   <div class="solved">
-    <div class="row"><span class="k">x</span><span><span class="v-trace" id="px">—</span><span class="u">cm</span></span></div>
-    <div class="row"><span class="k">y</span><span><span class="v-trace" id="py">—</span><span class="u">cm</span></span></div>
-    <div class="row"><span class="k">z</span><span><span class="v-trace" id="pz">—</span><span class="u">cm</span></span></div>
+    <div class="row"><span class="k">x</span><span><span class="v-trace" id="px">—</span><span class="pm" id="ex">±—</span><span class="u">cm</span></span></div>
+    <div class="row"><span class="k">y</span><span><span class="v-trace" id="py">—</span><span class="pm" id="ey">±—</span><span class="u">cm</span></span></div>
+    <div class="row"><span class="k">z</span><span><span class="v-trace" id="pz">—</span><span class="pm" id="ez">±—</span><span class="u">cm</span></span></div>
   </div>
   <div class="setlbl">Set position (cm)</div>
   <div class="xyz">
@@ -256,6 +263,8 @@
     <div class="cell"><span>y</span><input type="number" id="sy" step="5" value="100"></div>
     <div class="cell"><span>z</span><input type="number" id="sz" step="5" value="75"></div>
   </div>
+  <div class="setlbl" style="margin-top:8px">Zoom</div>
+  <input type="range" id="zoom" min="0" max="100" step="1" value="50">
 </div>
 
 <div id="rail">
@@ -339,6 +348,8 @@ const CFG = {
   gnIters: 6,
   lambda: 1e-6,
   staleMs: 800,
+  sampleHz: 10,     // resample ranges at a realistic UWB rate, not per frame
+  meanTau: 0.9,     // seconds; running-average time constant for the reported position
 };
 
 const COL = {
@@ -386,11 +397,14 @@ function closedForm(anchors, r) {
 }
 
 /* Gauss-Newton: minimise Σ(‖p−aᵢ‖ − rᵢ)².
-   Jacobian row i = unit vector from anchor i toward p. */
+   Jacobian row i = unit vector from anchor i toward p.
+   Also returns JᵀJ at the solution — that matrix is what the uncertainty
+   ellipsoid is built from. */
 function gaussNewton(anchors, r, seed) {
   let p = (seed && isFinite(seed[0]+seed[1]+seed[2])) ? seed.slice() : [1, 1, 0.75];
+  let JtJ = null;
   for (let it = 0; it < CFG.gnIters; it++) {
-    const JtJ = [[CFG.lambda,0,0],[0,CFG.lambda,0],[0,0,CFG.lambda]];
+    JtJ = [[CFG.lambda,0,0],[0,CFG.lambda,0],[0,0,CFG.lambda]];
     const Jtf = [0,0,0];
     for (let i = 0; i < 4; i++) {
       const d = sub(p, anchors[i].p);
@@ -409,7 +423,64 @@ function gaussNewton(anchors, r, seed) {
   }
   let ss = 0;
   for (let i = 0; i < 4; i++) ss += Math.pow(norm(sub(p, anchors[i].p)) - r[i], 2);
-  return { p, residual: Math.sqrt(ss/4) };
+  return { p, residual: Math.sqrt(ss/4), ss, JtJ };
+}
+
+/* ---- covariance -> ellipsoid ------------------------------------------
+   C = σ²(JᵀJ)⁻¹ is the covariance of the least-squares estimate. Its
+   eigenvectors are the principal axes of the uncertainty, the square roots
+   of its eigenvalues are the 1σ half-lengths. With one raised anchor the
+   z eigenvalue dominates, so the cloud comes out stretched vertically —
+   that stretch IS your geometry problem, drawn to scale.
+   ---------------------------------------------------------------------- */
+
+/* inverse of a 3x3 via adjugate */
+function inv3(M) {
+  const [a,b,c] = M[0], [d,e,f] = M[1], [g,h,i] = M[2];
+  const det = a*(e*i - f*h) - b*(d*i - f*g) + c*(d*h - e*g);
+  if (!isFinite(det) || Math.abs(det) < 1e-14) return null;
+  const s = 1/det;
+  return [
+    [ (e*i - f*h)*s, (c*h - b*i)*s, (b*f - c*e)*s ],
+    [ (f*g - d*i)*s, (a*i - c*g)*s, (c*d - a*f)*s ],
+    [ (d*h - e*g)*s, (b*g - a*h)*s, (a*e - b*d)*s ],
+  ];
+}
+
+/* Jacobi eigenvalue iteration for a symmetric 3x3.
+   Returns { values:[λ0,λ1,λ2], vectors:[[v0],[v1],[v2]] } with vectors as columns. */
+function eigenSym3(Min) {
+  const A = [Min[0].slice(), Min[1].slice(), Min[2].slice()];
+  let V = [[1,0,0],[0,1,0],[0,0,1]];
+  for (let sweep = 0; sweep < 12; sweep++) {
+    let off = 0;
+    for (let i = 0; i < 3; i++) for (let j = i+1; j < 3; j++) off += A[i][j]*A[i][j];
+    if (off < 1e-20) break;
+    for (let p = 0; p < 2; p++) {
+      for (let q = p+1; q < 3; q++) {
+        if (Math.abs(A[p][q]) < 1e-18) continue;
+        const theta = (A[q][q] - A[p][p]) / (2*A[p][q]);
+        const t = Math.sign(theta || 1) / (Math.abs(theta) + Math.sqrt(theta*theta + 1));
+        const c = 1/Math.sqrt(t*t + 1), s = t*c;
+        for (let k = 0; k < 3; k++) {
+          const akp = A[k][p], akq = A[k][q];
+          A[k][p] = c*akp - s*akq;
+          A[k][q] = s*akp + c*akq;
+        }
+        for (let k = 0; k < 3; k++) {
+          const apk = A[p][k], aqk = A[q][k];
+          A[p][k] = c*apk - s*aqk;
+          A[q][k] = s*apk + c*aqk;
+        }
+        for (let k = 0; k < 3; k++) {
+          const vkp = V[k][p], vkq = V[k][q];
+          V[k][p] = c*vkp - s*vkq;
+          V[k][q] = s*vkp + c*vkq;
+        }
+      }
+    }
+  }
+  return { values: [A[0][0], A[1][1], A[2][2]], vectors: V };
 }
 
 /* ============================================================
@@ -544,9 +615,11 @@ function buildAnchors() {
 }
 buildAnchors();
 
+/* a small core marker at the centre of the cloud — the cloud is the estimate,
+   this is just so the centre is legible */
 const gnDot = new THREE.Mesh(
-  new THREE.SphereGeometry(0.058, 20, 16),
-  new THREE.MeshStandardMaterial({ color: COL.trace, emissive: COL.trace, emissiveIntensity: 0.5 })
+  new THREE.SphereGeometry(0.022, 16, 12),
+  new THREE.MeshBasicMaterial({ color: 0xDFF6FC })
 );
 scene.add(gnDot);
 
@@ -564,6 +637,96 @@ scene.add(truthDot);
 
 const droneLbl = makeLabel("D1", "#4CC9E6");
 scene.add(droneLbl);
+
+/* ---- uncertainty cloud: a density of sampled points ----
+   Draws the actual distribution instead of a surface around it. Each point is
+   one plausible place the drone could be, given the noise: p = mean + V·√λ·s
+   for a standard-normal s. Where points bunch up, the drone probably is.
+   The base samples are drawn ONCE and reused, so the cloud deforms smoothly
+   with the covariance instead of scintillating. */
+const N_PTS = 2600;
+const baseSamples = new Float32Array(N_PTS * 3);
+const mahal = new Float32Array(N_PTS);
+(function seedCloud() {
+  let spare = null;
+  const g = () => {
+    if (spare !== null) { const s = spare; spare = null; return s; }
+    let u, v, s;
+    do { u = Math.random()*2-1; v = Math.random()*2-1; s = u*u+v*v; } while (s >= 1 || s === 0);
+    const m = Math.sqrt(-2*Math.log(s)/s);
+    spare = v*m;
+    return u*m;
+  };
+  for (let i = 0; i < N_PTS; i++) {
+    const x = g(), y = g(), z = g();
+    baseSamples[i*3] = x; baseSamples[i*3+1] = y; baseSamples[i*3+2] = z;
+    mahal[i] = Math.sqrt(x*x + y*y + z*z);      // how many σ out this sample is
+  }
+})();
+
+/* soft round sprite — square points read as confetti, not density */
+function dotTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const g = c.getContext("2d");
+  const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grd.addColorStop(0,    "rgba(255,255,255,1)");
+  grd.addColorStop(0.35, "rgba(255,255,255,0.5)");
+  grd.addColorStop(1,    "rgba(255,255,255,0)");
+  g.fillStyle = grd;
+  g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+
+const cloudGeo = new THREE.BufferGeometry();
+cloudGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(N_PTS*3), 3));
+{
+  /* fade the far-out samples so the core reads as dense and the skin as haze */
+  const col = new Float32Array(N_PTS*3);
+  const base = new THREE.Color(COL.trace);
+  for (let i = 0; i < N_PTS; i++) {
+    const f = Math.exp(-mahal[i]*mahal[i] / 7) * 0.85 + 0.15;
+    col[i*3] = base.r*f; col[i*3+1] = base.g*f; col[i*3+2] = base.b*f;
+  }
+  cloudGeo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+}
+
+const cloud = new THREE.Points(cloudGeo, new THREE.PointsMaterial({
+  size: 0.030,
+  map: dotTexture(),
+  vertexColors: true,
+  transparent: true,
+  opacity: 0.5,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,          // points must not occlude each other
+  sizeAttenuation: true,      // near points draw bigger -> real depth cue
+}));
+scene.add(cloud);
+
+/* rebuild the point positions from the covariance */
+function setCloud(center, C) {
+  if (!C) { cloud.visible = false; return; }
+  const { values, vectors } = eigenSym3(C);
+  const ax = values.map(v => Math.sqrt(Math.max(v, 0)));
+  if (!ax.every(isFinite) || Math.max(...ax) < 1e-4) { cloud.visible = false; return; }
+  cloud.visible = true;
+
+  /* eigenvector columns scaled by their σ — this maps a unit ball to the
+     covariance ellipsoid, so the samples land with the right shape and tilt */
+  const c0 = [vectors[0][0]*ax[0], vectors[1][0]*ax[0], vectors[2][0]*ax[0]];
+  const c1 = [vectors[0][1]*ax[1], vectors[1][1]*ax[1], vectors[2][1]*ax[1]];
+  const c2 = [vectors[0][2]*ax[2], vectors[1][2]*ax[2], vectors[2][2]*ax[2]];
+
+  const pos = cloudGeo.attributes.position.array;
+  for (let i = 0; i < N_PTS; i++) {
+    const s0 = baseSamples[i*3], s1 = baseSamples[i*3+1], s2 = baseSamples[i*3+2];
+    pos[i*3]   = center[0] + c0[0]*s0 + c1[0]*s1 + c2[0]*s2;
+    pos[i*3+1] = center[1] + c0[1]*s0 + c1[1]*s1 + c2[1]*s2;
+    pos[i*3+2] = center[2] + c0[2]*s0 + c1[2]*s1 + c2[2]*s2;
+  }
+  cloudGeo.attributes.position.needsUpdate = true;
+  cloudGeo.computeBoundingSphere();
+}
 
 /* line between the two estimates: the disagreement between
    "solve the equations" and "fit the measurements" */
@@ -591,6 +754,19 @@ scene.add(ring);
 const HOME = { theta: -0.9, phi: 1.05, radius: 5.4, target: new THREE.Vector3(1, 1, 0.6) };
 const cam = { theta: HOME.theta, phi: HOME.phi, radius: HOME.radius, target: HOME.target.clone() };
 
+/* zoom slider <-> camera distance. Log-scaled: a step feels the same whether
+   you're close in or far out, which linear mapping doesn't give you. */
+const ZMIN = 1.0, ZMAX = 16;
+const radToSlider = r =>
+  Math.max(0, Math.min(100, Math.round(100 * (1 - Math.log(r/ZMIN) / Math.log(ZMAX/ZMIN)))));
+const sliderToRad = v => ZMIN * Math.pow(ZMAX/ZMIN, 1 - v/100);
+
+function syncZoom() {
+  const z = document.getElementById("zoom");
+  if (!z || document.activeElement === z) return;   // don't fight an active drag
+  z.value = radToSlider(cam.radius);
+}
+
 function applyCam() {
   cam.phi = Math.min(Math.max(cam.phi, 0.05), Math.PI - 0.05);
   cam.radius = Math.min(Math.max(cam.radius, 0.8), 24);
@@ -600,6 +776,7 @@ function applyCam() {
     cam.target.z + cam.radius*Math.cos(cam.phi)
   );
   camera.lookAt(cam.target);
+  syncZoom();
 }
 
 const ptrs = new Map();
@@ -657,7 +834,7 @@ function resize() {
   renderer.setSize(innerWidth, innerHeight);
   /* keep the drone card sitting just above the rail */
   const railH = document.getElementById("rail").offsetHeight;
-  document.getElementById("drone").style.bottom = (railH + 10) + "px";
+  document.getElementById("drone").style.bottom = (railH + 8) + "px";
 }
 addEventListener("resize", resize);
 
@@ -704,6 +881,11 @@ $("solverSeg").addEventListener("click", e => {
 $("noise").addEventListener("input", e => {
   sigma = e.target.value / 100;
   $("noiseVal").textContent = e.target.value + " cm";
+});
+
+$("zoom").addEventListener("input", e => {
+  cam.radius = sliderToRad(+e.target.value);
+  applyCam();
 });
 
 /* typed position, cm -> m */
@@ -755,6 +937,7 @@ $("apply").onclick = () => {
 
 const el = {
   px: $("px"), py: $("py"), pz: $("pz"),
+  ex: $("ex"), ey: $("ey"), ez: $("ez"),
   res: $("res"), err: $("err"), zerr: $("zerr"),
   led: $("led"), srcLbl: $("srcLbl"),
 };
@@ -769,6 +952,44 @@ const manualRanges = () => ["mr0","mr1","mr2","mr3"].map(id => {
    ============================================================ */
 let lastT = performance.now();
 let held = null;
+let sampleAcc = 0;
+const SM = { mean: null, cf: null };   // running-average centre, smoothed closed-form
+
+const lerp3 = (a, b, k) => [
+  a[0] + (b[0]-a[0])*k, a[1] + (b[1]-a[1])*k, a[2] + (b[2]-a[2])*k
+];
+
+function solveOnce(now) {
+  let truth = null, r = null;
+
+  if (src === "place") {
+    truth = TAG.slice();
+    r = measure(truth, sigma);
+    el.led.className = "led live";
+  } else if (src === "ranges") {
+    r = manualRanges();
+    el.led.className = "led live";
+  } else {
+    const fresh = LIVE.ranges && (now - LIVE.last) < CFG.staleMs;
+    if (!fresh) { el.led.className = "led stale"; return; }
+    r = LIVE.ranges;
+    el.led.className = "led live";
+  }
+
+  const cf = closedForm(CFG.anchors, r);
+  const gn = gaussNewton(CFG.anchors, r, cf);
+
+  /* σ for the cloud: known in Place mode, estimated from the fit otherwise.
+     4 ranges, 3 unknowns => exactly 1 degree of freedom, so σ̂² = SSR/(m−n).
+     A jumpy estimate, honestly so — one DOF is thin evidence for a variance. */
+  const sig = (src === "place") ? sigma : Math.sqrt(Math.max(gn.ss, 1e-8));
+
+  let C = null;
+  const inv = gn.JtJ ? inv3(gn.JtJ) : null;
+  if (inv && sig > 1e-4) C = inv.map(row => row.map(v => v * sig * sig));
+
+  held = { cf, gn, truth, C, sig };
+}
 
 function frame(now) {
   const dt = Math.min((now - lastT)/1000, 0.1);
@@ -777,45 +998,43 @@ function frame(now) {
   rateT += dt;
   if (rateT >= 0.5) { LIVE.rate = rateN / rateT; rateN = 0; rateT = 0; }
 
-  let truth = null, r = null, ok = true;
-
-  if (src === "place") {
-    truth = TAG.slice();
-    r = measure(truth, sigma);              // fresh noise every frame -> live jitter
-    el.led.className = "led live";
-  } else if (src === "ranges") {
-    r = manualRanges();
-    el.led.className = "led live";
-  } else {
-    const fresh = LIVE.ranges && (now - LIVE.last) < CFG.staleMs;
-    if (fresh) { r = LIVE.ranges; el.led.className = "led live"; }
-    else { ok = false; el.led.className = "led stale"; }
-  }
-
-  if (ok) {
-    const cf = closedForm(CFG.anchors, r);
-    const gn = gaussNewton(CFG.anchors, r, cf);
-    const shown = (mode === "cf" && cf) ? cf : gn.p;
-    held = { cf, gn, shown, truth };
+  sampleAcc += dt;
+  const period = 1 / CFG.sampleHz;
+  if (sampleAcc >= period) {
+    sampleAcc %= period;
+    solveOnce(now);
   }
 
   if (held) {
-    const { cf, gn, shown, truth: tr } = held;
+    const { cf, gn, truth: tr, C } = held;
+
+    /* Running average of the per-sample solutions. Individual solves scatter;
+       their mean settles. This is the reported position and the cloud centre —
+       so nothing on screen twitches, it only travels when the drone does. */
+    const k = 1 - Math.exp(-dt / CFG.meanTau);
+    SM.mean = SM.mean ? lerp3(SM.mean, gn.p, k) : gn.p.slice();
+    if (cf) SM.cf = SM.cf ? lerp3(SM.cf, cf, k) : cf.slice();
+
+    const shown = (mode === "cf" && SM.cf) ? SM.cf : SM.mean;
 
     gnDot.visible = mode !== "cf";
-    cfDot.visible = (mode === "cf" || mode === "both") && !!cf;
-    disagree.visible = mode === "both" && !!cf;
+    cfDot.visible = (mode === "cf" || mode === "both") && !!SM.cf;
+    disagree.visible = mode === "both" && !!SM.cf;
     truthDot.visible = !!tr;
 
-    gnDot.position.set(gn.p[0], gn.p[1], gn.p[2]);
-    if (cf) cfDot.position.set(cf[0], cf[1], cf[2]);
+    gnDot.position.set(SM.mean[0], SM.mean[1], SM.mean[2]);
+    if (SM.cf) cfDot.position.set(SM.cf[0], SM.cf[1], SM.cf[2]);
     if (tr) truthDot.position.set(tr[0], tr[1], tr[2]);
     droneLbl.position.set(shown[0], shown[1], shown[2] + 0.17);
 
+    /* the cloud is where a single reading could actually land, centred on the
+       average. Closed form has no covariance, so no cloud in that mode. */
+    setCloud(SM.mean, mode === "cf" ? null : C);
+
     if (disagree.visible) {
       disagree.geometry.setFromPoints([
-        new THREE.Vector3(gn.p[0], gn.p[1], gn.p[2]),
-        new THREE.Vector3(cf[0], cf[1], cf[2]),
+        new THREE.Vector3(SM.mean[0], SM.mean[1], SM.mean[2]),
+        new THREE.Vector3(SM.cf[0], SM.cf[1], SM.cf[2]),
       ]);
     }
 
@@ -829,6 +1048,16 @@ function frame(now) {
     el.px.textContent = cm(shown[0]);
     el.py.textContent = cm(shown[1]);
     el.pz.textContent = cm(shown[2]);
+
+    /* ± is the 1σ half-width per axis: the diagonal of the covariance.
+       Same numbers the cloud is drawn from. */
+    if (C && mode !== "cf") {
+      el.ex.textContent = "±" + (Math.sqrt(Math.max(C[0][0],0))*100).toFixed(1);
+      el.ey.textContent = "±" + (Math.sqrt(Math.max(C[1][1],0))*100).toFixed(1);
+      el.ez.textContent = "±" + (Math.sqrt(Math.max(C[2][2],0))*100).toFixed(1);
+    } else {
+      el.ex.textContent = el.ey.textContent = el.ez.textContent = "";
+    }
 
     el.res.textContent = (gn.residual*100).toFixed(1) + " cm";
     el.res.className = "mono " + (gn.residual > 0.06 ? "v-fault" : "v-signal");
