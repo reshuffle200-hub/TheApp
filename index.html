@@ -37,44 +37,95 @@
   canvas { display: block; position: fixed; inset: 0; }
   .mono { font-family: "JetBrains Mono", monospace; }
 
-  /* ---------- readout ---------- */
-  #readout {
-    position: fixed;
-    top: calc(env(safe-area-inset-top) + 12px);
-    left: calc(env(safe-area-inset-left) + 12px);
-    background: rgba(14,20,26,0.82);
+  .card {
+    background: rgba(14,20,26,0.86);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--edge);
     border-radius: 10px;
+  }
+
+  /* ---------- quality readout, top-left ---------- */
+  #readout {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 12px);
+    left: calc(env(safe-area-inset-left) + 12px);
     padding: 10px 12px;
     font-family: "JetBrains Mono", monospace;
     font-size: 12px;
     line-height: 1.6;
     pointer-events: none;
-    min-width: 176px;
+    min-width: 160px;
   }
   .hdr {
     font-size: 9px;
     letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--dim);
-    margin-bottom: 3px;
+    margin-bottom: 4px;
     display: flex;
     align-items: center;
     gap: 6px;
   }
-  .row + .hdr { margin-top: 9px; }
-  .row { display: flex; justify-content: space-between; gap: 16px; }
+  .row { display: flex; justify-content: space-between; gap: 14px; }
   .row .k { color: var(--dim); }
-  .v-trace { color: var(--trace); }
+  .v-trace  { color: var(--trace); }
   .v-signal { color: var(--signal); }
-  .v-truth { color: var(--truth); }
-  .v-fault { color: var(--fault); }
-  .v-dim { color: var(--dim); }
+  .v-truth  { color: var(--truth); }
+  .v-fault  { color: var(--fault); }
+  .v-dim    { color: var(--dim); }
   .led { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); flex: none; }
-  .led.live { background: var(--trace); box-shadow: 0 0 6px var(--trace); }
+  .led.live  { background: var(--trace); box-shadow: 0 0 6px var(--trace); }
   .led.stale { background: var(--fault); }
+
+  /* ---------- drone panel, bottom-left ---------- */
+  #drone {
+    position: fixed;
+    left: calc(env(safe-area-inset-left) + 12px);
+    bottom: 0;                       /* set by JS to clear the rail */
+    padding: 10px 12px;
+    width: 214px;
+  }
+  #drone .hdr .name { color: var(--trace); letter-spacing: 0.14em; }
+  #drone .solved {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    margin-bottom: 9px;
+  }
+  #drone .solved .u { color: var(--dim); font-size: 10px; margin-left: 3px; }
+  .setlbl {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 5px;
+    padding-top: 8px;
+    border-top: 1px solid var(--edge);
+  }
+  .xyz { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+  .xyz .cell { display: flex; flex-direction: column; gap: 3px; }
+  .xyz .cell span {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px; color: var(--dim); text-align: center;
+  }
+  input[type=number], input[type=text] {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--edge);
+    border-radius: 6px;
+    color: var(--ink);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 15px;
+    padding: 7px 2px;
+    text-align: center;
+    min-height: 38px;
+    -moz-appearance: textfield;
+  }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input:focus { outline: 2px solid var(--trace); outline-offset: 1px; }
 
   /* ---------- rail ---------- */
   #rail {
@@ -84,10 +135,10 @@
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-top: 1px solid var(--edge);
-    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    padding: 9px 12px calc(9px + env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 7px;
   }
   .seg { display: flex; border: 1px solid var(--edge); border-radius: 8px; overflow: hidden; }
   .seg button {
@@ -98,10 +149,10 @@
     color: var(--dim);
     font-family: "JetBrains Mono", monospace;
     font-size: 10px;
-    letter-spacing: 0.09em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    padding: 8px 2px;
-    min-height: 34px;
+    padding: 7px 2px;
+    min-height: 32px;
   }
   .seg button:last-child { border-right: 0; }
   .seg button.on { background: var(--trace); color: #06212B; font-weight: 700; }
@@ -111,15 +162,10 @@
   .knobs { display: flex; align-items: center; gap: 10px; }
   .knobs label {
     font-family: "JetBrains Mono", monospace;
-    font-size: 9px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--dim);
-    white-space: nowrap;
+    font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--dim); white-space: nowrap;
   }
-  input[type=range] {
-    flex: 1; -webkit-appearance: none; appearance: none; height: 24px; background: none;
-  }
+  input[type=range] { flex: 1; -webkit-appearance: none; appearance: none; height: 24px; background: none; }
   input[type=range]::-webkit-slider-runnable-track { height: 2px; background: var(--edge); border-radius: 2px; }
   input[type=range]::-webkit-slider-thumb {
     -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
@@ -129,7 +175,7 @@
   input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border: 0; border-radius: 50%; background: var(--signal); }
   .knobs .val {
     font-family: "JetBrains Mono", monospace; font-size: 11px;
-    color: var(--signal); width: 50px; text-align: right;
+    color: var(--signal); width: 48px; text-align: right;
   }
   .btn {
     flex: 1;
@@ -138,12 +184,8 @@
     border-radius: 8px;
     color: var(--ink);
     font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    padding: 0 8px;
-    min-height: 34px;
-    white-space: nowrap;
+    font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0 6px; min-height: 32px; white-space: nowrap;
   }
   .btn:focus-visible { outline: 2px solid var(--trace); outline-offset: 2px; }
   .hide { display: none !important; }
@@ -152,7 +194,7 @@
   #sheet {
     position: fixed;
     left: 0; right: 0; bottom: 0;
-    max-height: 78vh;
+    max-height: 80vh;
     overflow-y: auto;
     background: rgba(14,20,26,0.97);
     backdrop-filter: blur(14px);
@@ -168,46 +210,19 @@
   #sheet.open { transform: translateY(0); }
   @media (prefers-reduced-motion: reduce) { #sheet { transition: none; } }
   .sheet-top { display: flex; align-items: baseline; margin-bottom: 14px; }
-  .sheet-top h2 {
-    margin: 0; font-size: 14px; font-weight: 700; letter-spacing: -0.01em;
-  }
+  .sheet-top h2 { margin: 0; font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
   .sheet-top .btn { flex: none; margin-left: auto; }
-  .grid-hdr, .arow {
-    display: grid;
-    grid-template-columns: 30px 1fr 1fr 1fr;
-    gap: 6px;
-    align-items: center;
-  }
+  .grid-hdr, .arow { display: grid; grid-template-columns: 34px 1fr 1fr 1fr; gap: 6px; align-items: center; }
   .grid-hdr span {
     font-family: "JetBrains Mono", monospace; font-size: 9px;
-    letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim);
-    text-align: center;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); text-align: center;
   }
   .grid-hdr span:first-child { text-align: left; }
   .arow { margin-top: 6px; }
-  .arow .tag {
-    font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700; color: var(--signal);
-  }
-  input[type=number] {
-    width: 100%;
-    background: var(--panel);
-    border: 1px solid var(--edge);
-    border-radius: 7px;
-    color: var(--ink);
-    font-family: "JetBrains Mono", monospace;
-    font-size: 15px;
-    padding: 8px 6px;
-    text-align: center;
-    min-height: 40px;
-    -moz-appearance: textfield;
-  }
-  input[type=number]::-webkit-outer-spin-button,
-  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  input[type=number]:focus { outline: 2px solid var(--trace); outline-offset: 1px; }
+  .arow .tag { font-family: "JetBrains Mono", monospace; font-size: 11px; font-weight: 700; color: var(--signal); }
   .note {
     font-family: "JetBrains Mono", monospace;
-    font-size: 10px; line-height: 1.7; color: var(--dim);
-    margin: 12px 0 0;
+    font-size: 10px; line-height: 1.7; color: var(--dim); margin: 12px 0 0;
   }
   .note b { color: var(--signal); font-weight: 500; }
   .sect {
@@ -216,38 +231,37 @@
     margin: 18px 0 8px; padding-top: 14px; border-top: 1px solid var(--edge);
   }
   .sheet-actions { display: flex; gap: 8px; margin-top: 14px; }
-  .sheet-actions .btn.primary {
-    background: var(--trace); color: #06212B; border-color: var(--trace); font-weight: 700;
-  }
-
-  #hint {
-    position: fixed; left: 50%; transform: translateX(-50%);
-    bottom: calc(env(safe-area-inset-bottom) + 150px);
-    font-family: "JetBrains Mono", monospace; font-size: 10px;
-    letter-spacing: 0.1em; color: var(--dim);
-    pointer-events: none; transition: opacity 0.6s; text-align: center;
-  }
+  .sheet-actions .btn.primary { background: var(--trace); color: #06212B; border-color: var(--trace); font-weight: 700; }
 </style>
 </head>
 <body>
 
-<div id="readout">
-  <div class="hdr"><span class="led" id="led"></span><span id="srcLbl">Sim</span></div>
-  <div class="row"><span class="k">x</span><span class="v-trace mono" id="px">—</span></div>
-  <div class="row"><span class="k">y</span><span class="v-trace mono" id="py">—</span></div>
-  <div class="row"><span class="k">z</span><span class="v-trace mono" id="pz">—</span></div>
-  <div class="hdr">Quality</div>
+<div id="readout" class="card">
+  <div class="hdr"><span class="led" id="led"></span><span id="srcLbl">Place</span></div>
   <div class="row"><span class="k">resid</span><span class="mono v-signal" id="res">—</span></div>
   <div class="row"><span class="k">error</span><span class="mono v-truth" id="err">—</span></div>
   <div class="row"><span class="k">z err</span><span class="mono v-truth" id="zerr">—</span></div>
 </div>
 
-<div id="hint">one finger orbit · two pan · pinch zoom</div>
+<div id="drone" class="card">
+  <div class="hdr"><span class="name">Drone 1</span></div>
+  <div class="solved">
+    <div class="row"><span class="k">x</span><span><span class="v-trace" id="px">—</span><span class="u">cm</span></span></div>
+    <div class="row"><span class="k">y</span><span><span class="v-trace" id="py">—</span><span class="u">cm</span></span></div>
+    <div class="row"><span class="k">z</span><span><span class="v-trace" id="pz">—</span><span class="u">cm</span></span></div>
+  </div>
+  <div class="setlbl">Set position (cm)</div>
+  <div class="xyz">
+    <div class="cell"><span>x</span><input type="number" id="sx" step="5" value="100"></div>
+    <div class="cell"><span>y</span><input type="number" id="sy" step="5" value="100"></div>
+    <div class="cell"><span>z</span><input type="number" id="sz" step="5" value="75"></div>
+  </div>
+</div>
 
 <div id="rail">
   <div class="seg alt" id="srcSeg">
-    <button data-src="sim" class="on">Sim</button>
-    <button data-src="manual">Manual</button>
+    <button data-src="place" class="on">Place</button>
+    <button data-src="ranges">Ranges</button>
     <button data-src="live">Live</button>
   </div>
   <div class="seg" id="solverSeg">
@@ -261,7 +275,6 @@
     <span class="val" id="noiseVal">4 cm</span>
   </div>
   <div class="knobs">
-    <button class="btn" id="play">Pause</button>
     <button class="btn" id="view">Top view</button>
     <button class="btn" id="reset">Reset view</button>
     <button class="btn" id="setup">Setup</button>
@@ -277,33 +290,30 @@
   <div class="grid-hdr"><span>Anchor</span><span>x (m)</span><span>y (m)</span><span>z (m)</span></div>
   <div id="anchorRows"></div>
   <p class="note">
-    Anchors need to <b>not be coplanar</b>. With only A3 raised, z leans entirely on it —
+    Anchors must <b>not be coplanar</b>. With only A3 raised, z leans entirely on it —
     raise a second one diagonally to tighten z.
   </p>
 
   <div class="sect">Manual ranges (m)</div>
-  <div class="grid-hdr"><span></span><span>r0</span><span>r1</span><span>r2</span></div>
+  <div class="grid-hdr"><span>r</span><span>r0</span><span>r1</span><span>r2</span></div>
   <div class="arow">
-    <span class="tag">r</span>
+    <span class="tag">0–2</span>
     <input type="number" id="mr0" step="0.01" value="1.55">
     <input type="number" id="mr1" step="0.01" value="1.55">
     <input type="number" id="mr2" step="0.01" value="1.55">
   </div>
-  <div class="grid-hdr" style="margin-top:6px"><span></span><span>r3</span><span></span><span></span></div>
+  <div class="grid-hdr" style="margin-top:8px"><span></span><span>r3</span><span></span><span></span></div>
   <div class="arow">
-    <span class="tag"></span>
+    <span class="tag">3</span>
     <input type="number" id="mr3" step="0.01" value="1.60">
     <span></span><span></span>
   </div>
-  <p class="note">Type ranges to solve for a static point. Switches source to <b>Manual</b> automatically.</p>
+  <p class="note">Tape-measure check: park the tag somewhere known, type the four real distances, see where it lands. Typing here switches the source to <b>Ranges</b>.</p>
 
   <div class="sect">Live source</div>
-  <div class="grid-hdr"><span></span><span style="grid-column: span 3; text-align:left">SSE endpoint</span></div>
-  <div class="arow" style="grid-template-columns: 30px 1fr">
-    <span class="tag">/</span>
-    <input type="text" id="epath" value="/ranges"
-      style="background:var(--panel);border:1px solid var(--edge);border-radius:7px;color:var(--ink);
-             font-family:'JetBrains Mono',monospace;font-size:14px;padding:8px;min-height:40px;text-align:left;width:100%">
+  <div class="arow" style="grid-template-columns: 34px 1fr">
+    <span class="tag">SSE</span>
+    <input type="text" id="epath" value="/ranges" style="text-align:left;padding-left:8px">
   </div>
   <p class="note" id="liveNote"></p>
 
@@ -315,8 +325,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* ============================================================
-   CONFIG — startup defaults. Editable live in the Setup sheet.
-   Metres, z-up, floor at z = 0.
+   CONFIG — startup defaults; anchors editable in the Setup sheet.
+   Metres internally, z-up, floor at z = 0. The Drone panel is cm.
    ============================================================ */
 const CFG = {
   anchors: [
@@ -328,7 +338,7 @@ const CFG = {
   field: 4,
   gnIters: 6,
   lambda: 1e-6,
-  staleMs: 800,     // no packet for this long => live goes stale
+  staleMs: 800,
 };
 
 const COL = {
@@ -346,7 +356,7 @@ function solve3(A, b) {
   for (let c = 0; c < 3; c++) {
     let piv = c;
     for (let r = c + 1; r < 3; r++) if (Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
-    if (Math.abs(M[piv][c]) < 1e-12) return null;      // singular: degenerate geometry
+    if (Math.abs(M[piv][c]) < 1e-12) return null;      // singular = degenerate geometry
     const tmp = M[c]; M[c] = M[piv]; M[piv] = tmp;
     for (let r = 0; r < 3; r++) {
       if (r === c) continue;
@@ -406,7 +416,7 @@ function gaussNewton(anchors, r, seed) {
    SOURCES
    ============================================================ */
 let gaussSpare = null;
-function gauss() {
+function gauss() {                        // Box-Muller
   if (gaussSpare !== null) { const s = gaussSpare; gaussSpare = null; return s; }
   let u, v, s;
   do { u = Math.random()*2-1; v = Math.random()*2-1; s = u*u+v*v; } while (s >= 1 || s === 0);
@@ -415,25 +425,21 @@ function gauss() {
   return u*m;
 }
 
-const truePos = t => [
-  1.0 + 0.85*Math.sin(t*0.55),
-  1.0 + 0.85*Math.sin(t*0.37 + 1.2),
-  0.95 + 0.55*Math.sin(t*0.23 + 0.6),
-];
+/* the placed tag position, in metres */
+const TAG = [1.0, 1.0, 0.75];
 
 const measure = (pt, sigma) =>
   CFG.anchors.map(a => Math.max(norm(sub(pt, a.p)) + gauss()*sigma, 0.01));
 
-/* Live: Server-Sent Events. Only possible when this page is served BY the
-   ESP32 (same origin, plain http). From an https host the browser blocks it
-   as mixed content — there is no client-side fix. */
+/* Live: SSE. Only works when this page is served BY the ESP32 (same origin,
+   plain http). From an https host the browser blocks it as mixed content. */
 const LIVE = { es: null, ranges: null, seq: -1, last: 0, rate: 0, err: null };
 let rateT = 0, rateN = 0;
 
 function liveConnect(path) {
   liveDisconnect();
   if (location.protocol === "https:") {
-    LIVE.err = "blocked: page is https, ESP32 is http";
+    LIVE.err = "blocked: page is https";
     return;
   }
   try {
@@ -452,11 +458,9 @@ function liveConnect(path) {
       } catch (_) { LIVE.err = "bad json"; }
     };
     LIVE.es.addEventListener("ranges", onMsg);
-    LIVE.es.onmessage = onMsg;          // also accept unnamed events
+    LIVE.es.onmessage = onMsg;              // accept unnamed events too
     LIVE.es.onerror = () => { LIVE.err = "no connection"; };
-  } catch (e) {
-    LIVE.err = e.message;
-  }
+  } catch (e) { LIVE.err = e.message; }
 }
 function liveDisconnect() {
   if (LIVE.es) { LIVE.es.close(); LIVE.es = null; }
@@ -478,9 +482,9 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 
 scene.add(new THREE.AmbientLight(0xffffff, 0.65));
-const key = new THREE.DirectionalLight(0xffffff, 0.55);
-key.position.set(3, -4, 6);
-scene.add(key);
+const keyLight = new THREE.DirectionalLight(0xffffff, 0.55);
+keyLight.position.set(3, -4, 6);
+scene.add(keyLight);
 
 const grid = new THREE.GridHelper(CFG.field, CFG.field*4, COL.edge, COL.edge);
 grid.rotation.x = Math.PI/2;
@@ -505,7 +509,6 @@ function makeLabel(text, color) {
   return spr;
 }
 
-/* anchors live in a group so Apply can rebuild them */
 const anchorGroup = new THREE.Group();
 scene.add(anchorGroup);
 
@@ -559,6 +562,11 @@ const truthDot = new THREE.Mesh(
 );
 scene.add(truthDot);
 
+const droneLbl = makeLabel("D1", "#4CC9E6");
+scene.add(droneLbl);
+
+/* line between the two estimates: the disagreement between
+   "solve the equations" and "fit the measurements" */
 const disagree = new THREE.Line(
   new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]),
   new THREE.LineBasicMaterial({ color: COL.fault, transparent: true, opacity: 0.9 })
@@ -602,7 +610,6 @@ cv.addEventListener("pointerdown", e => {
   cv.setPointerCapture(e.pointerId);
   ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
   last1 = { x: e.clientX, y: e.clientY };
-  fadeHint();
 });
 
 cv.addEventListener("pointermove", e => {
@@ -641,57 +648,45 @@ cv.addEventListener("pointercancel", endPtr);
 cv.addEventListener("wheel", e => {
   e.preventDefault();
   cam.radius *= 1 + Math.sign(e.deltaY)*0.08;
-  applyCam(); fadeHint();
+  applyCam();
 }, { passive: false });
 
 function resize() {
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  /* keep the drone card sitting just above the rail */
+  const railH = document.getElementById("rail").offsetHeight;
+  document.getElementById("drone").style.bottom = (railH + 10) + "px";
 }
 addEventListener("resize", resize);
-resize();
-applyCam();
 
 /* ============================================================
    UI
    ============================================================ */
 let mode = "gn";
-let src = "sim";
-let running = true;
+let src = "place";
 let sigma = 0.04;
 
 const $ = id => document.getElementById(id);
 
-const hintEl = $("hint");
-let hintGone = false;
-function fadeHint() {
-  if (hintGone) return;
-  hintGone = true;
-  hintEl.style.opacity = "0";
-  setTimeout(() => hintEl.remove(), 700);
-}
-setTimeout(fadeHint, 6000);
-
-/* build anchor input rows */
-const rowsEl = $("anchorRows");
+/* anchor rows in the sheet */
 CFG.anchors.forEach((a, i) => {
   const row = document.createElement("div");
   row.className = "arow";
   row.innerHTML = `<span class="tag">${a.id}</span>` +
-    [0,1,2].map(k =>
-      `<input type="number" step="0.05" id="a${i}_${k}" value="${a.p[k]}">`
-    ).join("");
-  rowsEl.appendChild(row);
+    [0,1,2].map(k => `<input type="number" step="0.05" id="a${i}_${k}" value="${a.p[k]}">`).join("");
+  $("anchorRows").appendChild(row);
 });
 
 function setSrc(s) {
   src = s;
   [...$("srcSeg").children].forEach(c => c.classList.toggle("on", c.dataset.src === s));
-  $("noiseRow").classList.toggle("hide", s !== "sim");
-  $("srcLbl").textContent = s === "sim" ? "Sim" : s === "manual" ? "Manual" : "Live";
+  $("noiseRow").classList.toggle("hide", s === "live");
+  $("srcLbl").textContent = s === "place" ? "Place" : s === "ranges" ? "Ranges" : "Live";
   if (s === "live") liveConnect($("epath").value.trim() || "/ranges");
   else liveDisconnect();
+  resize();
 }
 
 $("srcSeg").addEventListener("click", e => {
@@ -711,20 +706,29 @@ $("noise").addEventListener("input", e => {
   $("noiseVal").textContent = e.target.value + " cm";
 });
 
-$("play").onclick = () => {
-  running = !running;
-  $("play").textContent = running ? "Pause" : "Play";
-};
+/* typed position, cm -> m */
+function readTag() {
+  const v = ["sx","sy","sz"].map(id => parseFloat($(id).value));
+  v.forEach((n, i) => { if (isFinite(n)) TAG[i] = n / 100; });
+}
+["sx","sy","sz"].forEach(id => {
+  $(id).addEventListener("input", () => { readTag(); if (src !== "place") setSrc("place"); });
+});
+readTag();
 
-$("reset").onclick = () => {
-  cam.theta = HOME.theta; cam.phi = HOME.phi; cam.radius = HOME.radius;
-  cam.target.copy(HOME.target);
-  applyCam();
-};
+/* typing a range switches to the Ranges source */
+["mr0","mr1","mr2","mr3"].forEach(id =>
+  $(id).addEventListener("input", () => { if (src !== "ranges") setSrc("ranges"); })
+);
 
 $("view").onclick = () => {
   cam.theta = -Math.PI/2; cam.phi = 0.08; cam.radius = 4.4;
   cam.target.set(1, 1, 0);
+  applyCam();
+};
+$("reset").onclick = () => {
+  cam.theta = HOME.theta; cam.phi = HOME.phi; cam.radius = HOME.radius;
+  cam.target.copy(HOME.target);
   applyCam();
 };
 
@@ -732,15 +736,10 @@ const sheet = $("sheet");
 $("setup").onclick = () => {
   sheet.classList.add("open");
   $("liveNote").innerHTML = location.protocol === "https:"
-    ? "This page is on <b>https</b>, so the browser will block a plain-http ESP32. Live only works when the ESP32 serves this file."
-    : "Same origin, http — live is available. Point this at your SSE route.";
+    ? "This page is on <b>https</b>, so the browser blocks a plain-http ESP32. Live only works when the ESP32 serves this file."
+    : "Same origin, http — live is available.";
 };
 $("closeSheet").onclick = () => sheet.classList.remove("open");
-
-/* typing a manual range switches source for you */
-["mr0","mr1","mr2","mr3"].forEach(id =>
-  $(id).addEventListener("input", () => { if (src !== "manual") setSrc("manual"); })
-);
 
 $("apply").onclick = () => {
   CFG.anchors.forEach((a, i) => {
@@ -759,7 +758,7 @@ const el = {
   res: $("res"), err: $("err"), zerr: $("zerr"),
   led: $("led"), srcLbl: $("srcLbl"),
 };
-const fmt = v => (v >= 0 ? " " : "") + v.toFixed(3);
+const cm = v => (v * 100).toFixed(1);
 const manualRanges = () => ["mr0","mr1","mr2","mr3"].map(id => {
   const v = parseFloat($(id).value);
   return isFinite(v) && v > 0 ? v : 0.01;
@@ -768,26 +767,23 @@ const manualRanges = () => ["mr0","mr1","mr2","mr3"].map(id => {
 /* ============================================================
    LOOP
    ============================================================ */
-let t = 0, lastT = performance.now();
+let lastT = performance.now();
 let held = null;
 
 function frame(now) {
   const dt = Math.min((now - lastT)/1000, 0.1);
   lastT = now;
-  if (running && src === "sim") t += dt;
 
-  /* rate meter */
   rateT += dt;
   if (rateT >= 0.5) { LIVE.rate = rateN / rateT; rateN = 0; rateT = 0; }
 
-  /* ---- pick a range vector from the active source ---- */
   let truth = null, r = null, ok = true;
 
-  if (src === "sim") {
-    truth = truePos(t);
-    r = measure(truth, sigma);
+  if (src === "place") {
+    truth = TAG.slice();
+    r = measure(truth, sigma);              // fresh noise every frame -> live jitter
     el.led.className = "led live";
-  } else if (src === "manual") {
+  } else if (src === "ranges") {
     r = manualRanges();
     el.led.className = "led live";
   } else {
@@ -814,6 +810,7 @@ function frame(now) {
     gnDot.position.set(gn.p[0], gn.p[1], gn.p[2]);
     if (cf) cfDot.position.set(cf[0], cf[1], cf[2]);
     if (tr) truthDot.position.set(tr[0], tr[1], tr[2]);
+    droneLbl.position.set(shown[0], shown[1], shown[2] + 0.17);
 
     if (disagree.visible) {
       disagree.geometry.setFromPoints([
@@ -829,14 +826,14 @@ function frame(now) {
     drop.computeLineDistances();
     ring.position.set(shown[0], shown[1], 0.001);
 
-    el.px.textContent = fmt(shown[0]);
-    el.py.textContent = fmt(shown[1]);
-    el.pz.textContent = fmt(shown[2]);
+    el.px.textContent = cm(shown[0]);
+    el.py.textContent = cm(shown[1]);
+    el.pz.textContent = cm(shown[2]);
 
     el.res.textContent = (gn.residual*100).toFixed(1) + " cm";
     el.res.className = "mono " + (gn.residual > 0.06 ? "v-fault" : "v-signal");
 
-    if (tr) {   /* ground truth only exists in sim */
+    if (tr) {                       /* ground truth exists only when you placed it */
       const e3 = norm(sub(shown, tr));
       const ez = Math.abs(shown[2] - tr[2]);
       el.err.textContent  = (e3*100).toFixed(1) + " cm";
@@ -849,7 +846,6 @@ function frame(now) {
     }
   }
 
-  /* source label carries live status */
   if (src === "live") {
     el.srcLbl.textContent = LIVE.err ? LIVE.err
       : (LIVE.ranges && (now - LIVE.last) < CFG.staleMs)
@@ -860,6 +856,9 @@ function frame(now) {
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
+
+resize();
+applyCam();
 requestAnimationFrame(frame);
 </script>
 </body>
